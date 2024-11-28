@@ -1,26 +1,29 @@
 import fetch from 'node-fetch'; // Importing fetch in ESM style
 import express from 'express';
 import cors from 'cors';
+import dotenv from 'dotenv'; // Importing dotenv
+
+dotenv.config(); // Load environment variables
 
 const app = express();
-const port = 3001;
+const port = process.env.PORT || 3001; // Use PORT from environment or default to 3001
 
 app.use(cors()); // Enable CORS
 app.use(express.json()); // For parsing application/json
 
 // Define a basic route to check server is running
 app.get('/', (req, res) => {
-  res.send('Hello, this is the Express server running on port 3001!');
+  res.send('Hello, this is the Express server running on port ' + port + '!');
 });
 
 // Route to fetch extensions
 app.get('/webapi/core/extension', async (req, res) => {
   try {
-    const response = await fetch('https://pbx.johnsamuel.in/webapi/core/extension', {
+    const response = await fetch(`${process.env.PBX_API_URL}/webapi/core/extension`, {
       method: 'GET',
       headers: {
-        'Authorization': 'Basic ' + Buffer.from('sarath:Sarath0(*pbx').toString('base64'), // Basic Auth
-      }
+        'Authorization': 'Basic ' + Buffer.from(`${process.env.PBX_USERNAME}:${process.env.PBX_PASSWORD}`).toString('base64'), // Basic Auth
+      },
     });
 
     if (!response.ok) {
@@ -29,7 +32,6 @@ app.get('/webapi/core/extension', async (req, res) => {
 
     const data = await response.json(); // Parse the JSON response from PBX
     res.json(data); // Send the real data to the client (React app)
-
   } catch (error) {
     console.error('Error fetching PBX data:', error);
     res.status(500).json({ message: 'Error fetching PBX data' });
@@ -48,22 +50,20 @@ app.post('/webapi/core/user/create', async (req, res) => {
       return res.status(400).json({ message: `Missing required fields: ${missingFields.join(', ')}` });
     }
 
-    // Send POST request to the PBX API
-    const response = await fetch('https://pbx.johnsamuel.in/webapi/core/user/create.php', {
+    const response = await fetch(`${process.env.PBX_API_URL}/webapi/core/user/create.php`, {
       method: 'POST',
       headers: {
-        'Authorization': 'Basic ' + Buffer.from('sarath:Sarath0(*pbx').toString('base64'), // Basic Auth
+        'Authorization': 'Basic ' + Buffer.from(`${process.env.PBX_USERNAME}:${process.env.PBX_PASSWORD}`).toString('base64'), // Basic Auth
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(userData), // Send user data
     });
 
-    // Log raw response text before parsing it
-    const rawResponse = await response.text();  // Use `.text()` to get the raw response
-    console.log('Raw User Creation Response:', rawResponse);  // Log raw response
+    const rawResponse = await response.text();
+    console.log('Raw User Creation Response:', rawResponse);
 
     try {
-      const apiResponse = JSON.parse(rawResponse);  // Try parsing it as JSON
+      const apiResponse = JSON.parse(rawResponse); // Try parsing it as JSON
       if (!response.ok) {
         console.error('API response error:', apiResponse);
         return res.status(response.status).json({
@@ -113,23 +113,20 @@ app.post('/webapi/core/extension/create', async (req, res) => {
       return res.status(400).json({ message: `Missing required fields: ${missingFields.join(', ')}` });
     }
 
-    console.log('Extension Data:', extensionData);
-
-    const response = await fetch('https://pbx.johnsamuel.in/webapi/core/extension/create.php', {
+    const response = await fetch(`${process.env.PBX_API_URL}/webapi/core/extension/create.php`, {
       method: 'POST',
       headers: {
-        'Authorization': 'Basic ' + Buffer.from('sarath:Sarath0(*pbx').toString('base64'),
+        'Authorization': 'Basic ' + Buffer.from(`${process.env.PBX_USERNAME}:${process.env.PBX_PASSWORD}`).toString('base64'),
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(extensionData),
     });
 
-    // Log raw response text before parsing it
-    const rawResponse = await response.text();  // Use `.text()` to get the raw response
-    console.log('Raw Extension Creation Response:', rawResponse);  // Log raw response
+    const rawResponse = await response.text();
+    console.log('Raw Extension Creation Response:', rawResponse);
 
     try {
-      const apiResponse = JSON.parse(rawResponse);  // Try parsing it as JSON
+      const apiResponse = JSON.parse(rawResponse); // Try parsing it as JSON
       if (!response.ok) {
         console.error('API response error:', apiResponse);
         return res.status(response.status).json({
